@@ -1,0 +1,20 @@
+[project]
+name = "simple-mongo-2"
+version = "2.0.0"
+description = "A modern, type-safe MongoDB client library for Python with intuitive chaining syntax and comprehensive aggregation pipeline support."
+readme = "README.md"
+authors = [
+    { name = "marjon", email = "marjongodito@gmanmi.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "dotenv>=0.9.9",
+    "pymongo>=4.18.2",
+]
+
+[project.scripts]
+simple-mongo-2 = "simple_mongo_2.__init__:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"
