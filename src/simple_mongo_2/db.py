@@ -11,6 +11,7 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.cursor import Cursor
 from pymongo.database import Database
+from pymongo.operations import SearchIndexModel
 from pymongo.results import (
     DeleteResult,
     InsertOneResult,
@@ -269,7 +270,166 @@ class CollectionWrapper:
             pipeline = builder(pipeline)
 
         return self.collection.aggregate(pipeline)
+    
+    def vector_search_index(self,
+        modality : str,
+        path : str,
+        model : str = "voyage-4",
+        auto_embed=False,
+        name : str ="vector_index",
+        **kwargs
+        ):
+        """
+        Create a vector search index for MongoDB Atlas vector search.
+        
+        This method creates a search index that enables vector similarity search
+        capabilities on the collection using MongoDB Atlas vector search.
+        
+        Parameters
+        ----------
+        modality : str
+            The modality of the vector data (e.g., "text", "image", "video").
+        
+        path : str
+            The field path in documents that contains the vector data.
+        
+        model : str, optional
+            The embedding model to use for vector search. Defaults to "voyage-4".
+        
+        auto_embed : bool, optional
+            Whether to enable auto-embedding. When True, MongoDB Atlas will
+            automatically generate embeddings for the specified field.
+            Defaults to False.
+        
+        name : str, optional
+            The name of the search index. Defaults to "vector_index".
+        
+        **kwargs
+            Additional parameters to pass to the search index definition.
+            Refer to MongoDB Atlas vector search documentation for available options.
+        
+        Returns
+        -------
+        str
+            The name of the created search index.
+        
+        Example
+        -------
+        >>> collection.vector_search_index(
+        ...     modality="text",
+        ...     path="embedding",
+        ...     model="voyage-4",
+        ...     auto_embed=True,
+        ...     name="my_vector_index"
+        ... )
+        """
+        
+        
+        fields = {
+            "modality" : modality,
+            "path" : path,
+            "model" : model,
+            **kwargs
+        }
+        
+        if auto_embed:
+            fields["type"] = "autoEmbed"
+        
+        _search_index = SearchIndexModel(
+            definition={
+                "fields" : [fields]
+            },
+            name=name,
+            type="vectorSearch"
+        )
+        
+        return self.raw().create_search_index(_search_index)
 
+    def vector_search(self,
+        query : str,
+        index : str,
+        path : str,
+        type : str = "text",
+        model : str = "voyage-4",
+        candidates : int = 100,
+        limit : int = 10,
+        **kwargs
+    ):
+        """
+        Perform a vector similarity search on the collection.
+        
+        This method executes a vector search using MongoDB Atlas vector search
+        capabilities to find documents most similar to the query vector.
+        
+        Parameters
+        ----------
+        query : str
+            The query string or vector to search for.
+        
+        index : str
+            The name of the vector search index to use.
+            Must be created using vector_search_index() first.
+        
+        path : str
+            The field path in documents that contains the vector data.
+        
+        type : str, optional
+            The type of query ("text", "image", etc.). Defaults to "text".
+        
+        model : str, optional
+            The embedding model to use for vector search. Must match the
+            model used when creating the index. Defaults to "voyage-4".
+        
+        candidates : int, optional
+            The number of candidate documents to consider during the search.
+            Higher values improve accuracy but decrease performance.
+            Defaults to 100.
+        
+        limit : int, optional
+            The maximum number of results to return. Defaults to 10.
+        
+        **kwargs
+            Additional parameters to pass to the vector search operation.
+            Refer to MongoDB Atlas vector search documentation for available options.
+        
+        Returns
+        -------
+        pymongo.cursor.Cursor
+            A cursor containing the search results.
+            Results are sorted by similarity score (most similar first).
+        
+        Example
+        -------
+        >>> results = collection.vector_search(
+        ...     query="machine learning applications",
+        ...     index="my_vector_index",
+        ...     path="embedding",
+        ...     type="text",
+        ...     model="voyage-4",
+        ...     candidates=150,
+        ...     limit=5
+        ... )
+        >>> 
+        >>> for doc in results:
+        ...     print(doc["_id"], doc["score"])
+        """ 
+        args = {
+            "index" : index,
+            "path" : path,
+            "query" : {
+                type : query
+            },
+            "model" : model,
+            "numCandidates" : candidates,
+            "limit" : limit,
+            **kwargs
+        }
+        
+        return self.aggregate([
+            {
+                "$vectorSearch" : args
+            }
+        ])
     # ------------------------------------------------------------------
     # Escape hatch
     # ------------------------------------------------------------------
