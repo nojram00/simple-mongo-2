@@ -42,7 +42,7 @@ https://www.mongodb.com/docs/manual/core/aggregation-pipeline/
 """
 
 from __future__ import annotations
-from typing import Any, TypedDict, NotRequired, TypeAlias, Union
+from typing import Any, Literal, TypedDict, NotRequired, TypeAlias, Union
 
 MatchStage = TypedDict(
     "MatchStage",
@@ -212,10 +212,45 @@ Example
 ... })
 """
 
+QueryField = TypedDict(
+    'QueryField',
+    {
+        "text" : str
+    }
+)
+
+NestedField = TypedDict(
+    'NestedField',
+    {
+        "scoreMode" : Literal['avg', 'max']
+    }
+)
+
+VectorSearchPipeline = TypedDict(
+    "VectorSearchPipeline",
+    {
+        "exact" : NotRequired[bool],
+        "filter" : NotRequired[Any],
+        "index" : str,
+        "limit" : int,
+        "model" : NotRequired[str],
+        "nestedOptions" : NotRequired[NestedField],
+        "nestedOptions.scoreMode" : NotRequired[Literal['avg', 'max']],
+        "numCandidates" : NotRequired[int],
+        "parentFilter" : NotRequired[Any],
+        "path" : str,
+        "query" : NotRequired[QueryField],
+        "query.text" : NotRequired[str],
+        "queryVector" : NotRequired[list[int]],
+        "searchNodePreference" : NotRequired[Any]
+    }
+)
+
+
 VectorSearchStage = TypedDict(
     "VectorSearchStage",
     {
-        "$vectorSearch": dict[str, Any]
+        "$vectorSearch": VectorSearchPipeline
     }
 )
 """

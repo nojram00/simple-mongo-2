@@ -1,6 +1,6 @@
 [project]
 name = "simple-mongo-2"
-version = "3.0.0"
+version = "3.1.0"
 description = "A modern, type-safe MongoDB client library for Python with intuitive chaining syntax and comprehensive aggregation pipeline support."
 readme = "README.md"
 authors = [
